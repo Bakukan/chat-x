@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ChatBotX - Search Page</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script src="chatbotx.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Chat Page</h1>
+    <p>Chat with ChatBotX</p>
+  </header>
+
+  <nav>
+    <ul id="previousQuestions"></ul>
+  </nav>
+
+  <section>
+    <div id="searchResults"></div>
+
+    <h2>Chat</h2>
+    <input type="text" id="searchInput" placeholder="Type your question...">
+    <button onclick="searchChatBot()">Search</button>
+  </section>
+
+  <script>
+    // Sample dataset
+    var questions = [
+        "What is your name?",
+        "How are you doing?",
+        "What is the weather today?",
+        "Tell me a joke."
+    ];
+
+    var answers = [
+        "My name is ChatBot.",
+        "I'm doing well, thank you!",
+        "The weather is sunny.",
+        "Why don't scientists trust atoms? Because they make up everything!"
+    ];
+
+    var previousQuestionsList = document.getElementById("previousQuestions");
+
+    function addPreviousQuestionToList(question) {
+      var li = document.createElement("li");
+      li.innerHTML = question;
+      previousQuestionsList.appendChild(li);
+    }
+
+    function clearPreviousQuestionsList() {
+      previousQuestionsList.innerHTML = "";
+    }
+
+    // Function to preprocess the text
+    function preprocessText(text) {
+      return text.toLowerCase().replace(/[^\w\s]/gi, '');
+    }
+
+    // Function to calculate the cosine similarity between two vectors
+    function cosineSimilarity(vectorA, vectorB) {
+      var dotProduct = 0;
+      var normA = 0;
+      var normB = 0;
+
+      for (var i = 0; i < vectorA.length; i++) {
+        dotProduct += vectorA[i] * vectorB[i];
+        normA += Math.pow(vectorA[i], 2);
+        normB += Math.pow(vectorB[i], 2);
+      }
+
+      var similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+      return similarity;
+    }
+
+    // Function to vectorize the text using TF-IDF
+    function vectorizeText(text, vectorizer) {
+      var vector = vectorizer.transform([text]);
+      return vector[0];
+    }
+
+    function searchChatBot() {
+      var input = document.getElementById('searchInput').value;
+      var preprocessedInput = preprocessText(input);
+
+      // Initialize the TF-IDF vectorizer
+      var vectorizer = new scikit.Vectorizer();
+      vectorizer.fit(questions.map(preprocessText));
+
+      // Vectorize the input query
+      var queryVector = vectorizeText(preprocessedInput, vectorizer);
+
+      // Calculate the cosine similarity between the query and all the questions
+      var similarityScores = [];
+      for (var i = 0; i < questions.length; i++) {
+        var questionVector = vectorizeText(preprocessText(questions[i]), vectorizer);
+        var similarity = cosineSimilarity(queryVector, questionVector);
+        similarityScores.push(similarity);
+      }
+
+      // Find the index of the most similar question
+      var mostSimilarIndex = similarityScores.indexOf(Math.max(...similarityScores));
+
+      // Get the corresponding answer
+      var answer = answers[mostSimilarIndex];
+
+      // Add the current question to the previous questions list
+      addPreviousQuestionToList(input);
+
+      // Display the search results in the 'searchResults' div
+      var searchResults = document.getElementById('searchResults');
+      searchResults.innerHTML = '<p>Showing search results for: ' + input + '</p>';
+      searchResults.innerHTML += '<p>Answer: ' + answer + '</p>';
+
+      // Clear the input field
+      document.getElementById('searchInput').value = '';
+    }
+  </script>
+
+  <style>
+    /* Global styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+
+    nav {
+      background-color: #f2f2f2;
+      padding: 10px;
+    }
+
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav li {
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    nav li:last-child {
+      margin-right: 0;
+    }
+
+    section {
+      margin: 20px;
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #333;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    /* Login and Sign Up page styles */
+    form {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Search page styles */
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 70%;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    #searchResults {
+      margin-top: 20px;
+      text-align: center; /* Center align the search results */
+    }
+  </style>
+</body>
+</html>
